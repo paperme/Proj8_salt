@@ -1,0 +1,168 @@
+%\documentclass{eage}
+\documentclass[manuscript,ulem,graphix,revised]{geophysics}
+
+\usepackage{amsmath}
+\usepackage{graphicx}
+%\usepackage{epstopdf}
+%\usepackage{slashbox}
+\usepackage{hanging}
+\usepackage{mathrsfs}
+\usepackage{marginnote}
+\usepackage{amssymb} 
+\usepackage{url}
+\usepackage{makecell}
+
+
+%\usepackage{tikz}
+%\usepackage{geometry}
+%\usepackage{setspace}
+%\usepackage[margin=0.8in]{geometry}
+%\usepackage{float}
+%\usepackage{subfig}
+%\usepackage{subcaption}
+
+\usepackage{indentfirst}
+\makeatletter
+\newcommand*{\rom}[1]{\expandafter\@slowromancap\romannumeral #1@}
+\makeatother
+\begin{document}
+
+\title{Direct salt shape estimation from seismic traces with Fully Convolutional Network}
+
+\renewcommand{\thefootnote}{\fnsymbol{footnote}} 
+
+\address{
+\footnotemark[1]Department of Mathmatics, Harbin Institute of Technology,
+92 Xidazhi St., Nangang Dist., Harbin, Heilongjiang, China 150001
+
+%\footnotemark[2]Center for Lithospheric Studies, 
+%The University of Texas at Dallas, \\
+%800 W Campbell Road (ROC21), Richardson, TX, USA 75080
+}
+
+\author{Wenlong Wang\footnotemark[1]}
+
+%\footer{Wang \& McMechan}
+%\lefthead{Wang \& McMechan}
+\righthead{Salt delineation with FCN}
+
+\maketitle
+
+%\clearpage
+%\newpage
+\renewcommand{\figdir}{Fig_paper} % figure directory
+
+\begin{abstract}
+We introduce a novel method to estimate the shapes and positions of salt bodies directly from prestack seismic data using a modified fully convolutional network, which we use to perform both data transformation and semantic segmentation. Multiple shots are fed into the network as different channels to increase data redundency. We generate synthetic data to train the network, and once the training is completed, the algorithm is much faster than traditional migration and inversion techniques.
+Tests with synthetic data show satisfactory results.
+We train the network with two geometries and compare the detection abilities of the proposed network.
+
+\end{abstract}
+
+\section{Introduction}
+
+Many oil and gas production targets are found in salt provinces, which are complex as a result of geological formation over time. Salt body detection is vital for subsurface interpretation as horizons and faults may be truncated by the salt. 
+Salt bodies are usually discovered with seismic imaging. However, 
+traditional seismic imaging techniques do not distinguish reflections/transmissions from salt boundaries and other geological structures, thus further processing and interpretations are required. Traditional procedures involve calculating various salt attributes \citep{jing07,berthelot13,wang15, halpert14} to highlight salt boundaries, and extracting the salt boundaries from the attribute images \citep{lomask07, ramirez16}. Although those procedure has been automated to some extend, it still requires significant human efforts \citep{wu16}. 
+
+Machine learning (ML) technologies use artificial intelligence (AI) to minimize or eliminate human interference. In recent years, ML has shown its strength in many fields including image recognition, recommendation system \citep{Bobadilla13}, spam filter \citep{Androutsopoulos00}. fraud alert \citep{Ravisankar11}, etc. ML also has a long history of applications in geophysics, most of which are related to pattern recognition in seismic attributs  \citep{zeng04,zhao15} and faces classification in well logs \citep{lim05,hall16}. \citet{jia17} use ML with a supported vector regression technique for seismic data interpolation. In 2014, \citet{zhang14} propose to use neural networks (NN) to automatically predict fault directly from seismic traces. In this paper, we introduce to use recent techniques from ML and combine the processes of migration and interpretation to automatically detect salt bodies from seismic traces. 
+
+Salt body detection aims at grouping salt from other sediments in an image, which resembles a semantic segmentation problem in computer vision techniques. 
+The fully convolutional network (FCN) \citep{long15} is a state-of-the-art network that performs pixel-wise semantic segmentation with high accuracy. In this paper, we modify the FCN to delineate salt bodies directly from seismic traces. The paper is organized as follows, we first illustrate the methodology of using FCN for salt detection from seismic data. Tests with synthetic data are then performed to show the results. 
+
+
+\section{Methodology}
+In computer vision, semantic segmentation is a technique that attempts to partition an image into semantically meaningful parts, and classify each part into one of the pre-defined classes. FCN is currently one of the best ML networks that achieves pixelwise predictions of images. However, for the task of salt-detection using seismic traces as input, the seismic data needs to be projected from the data domain ($x$ - $t$) to space domain ($x$ - $z$), which is an inverse problem in geophysics, and also needs to be completed by the proposed neural network.
+%salt-detection needs to achieve more and thus we apply a modified FCN to detect salt bodies.
+
+To achieve automatic salt-detection from seismic data, we adopt and modify the UNet architecture \citep{ronneberger15}, which is built upon the concept of FCN. The modified network is shown in Figure~\ref{fig:sketch.eps}, which has a symmetric shape of a contracting path (left) and an expansive path (right).
+\plot{sketch.eps}{width=1.0\textwidth}
+{A modified UNet model to train the network for salt detection. Courtesy of \citet{ronneberger15} Figure 1.}
+%The UNet is composed of two parts of network: contracting layers and expanding or upsampling layers. 
+We made two modifications to the original UNet to fit into the task of salt detection. 
+
+First, the original UNet read input images in RGB color channels, while for processing seismic data, we assign different shot gathers, which are generated at different source locations but from the same model, as channels for the input. So the number of channels for the input is the same as the number of sources for each model. The multi-shot seismic data are fed into the network together to improve data redundancy. Second, different from a usual UNet network, whose output and input are in the same (image) domain. We expect the trained network to realize both domain projection (migration) and semantic segmentation (interpretation), i.e. to transform the data from $x$ - $t$ domain to $x$ - $z$ domain and tag the salt bodies simultaneously. To complete that, we truncate the final output layer to the size of the model, so the neural network can train itself during the contracting and expanding processes to map the data to the model domain.
+The labels we use for the training has the same size as the model with the salt body marked by 0s and 1s for others.
+
+The cost function is obtained by a pixel-size softmax over the final feature map combined with the cross-entropy loss function. The softmax is defined as 
+\begin{equation}
+p_n(\boldsymbol{x})=\frac{e^{{a_n(\boldsymbol{x})}}}{\sum_{n^\prime=1}^{N}e^{a_{n^\prime}(\boldsymbol{x})}},
+\label{eqn:softmax}
+\end{equation}
+where $a_{n}(\boldsymbol{x})$ denotes the activation in feature channel $n$ at the pixel positon $\boldsymbol{x}$. In our case, there are two classes: salt (0) and others (1), so the total number of classes N = 2. $p_n(\boldsymbol{x})$ is the approximated maximum-function. The cross entropy then measures the distance between the predicted values and targets
+\begin{equation}
+E=\sum_{\boldsymbol{x}}
+	\hat{p}_{l(\boldsymbol{x})}(\boldsymbol{x})
+	\mathrm{log}[
+	p_{l(\boldsymbol{x})}(\boldsymbol{x})
+	],
+\label{eqn:crossentropy}
+\end{equation}
+where the subscript $l(\boldsymbol{x})$ indicates the channel that are true at pixel position $\boldsymbol{x}$, and $\hat{p}$ is the ground truth.
+%For each model in the training set, the 10 shot gathers serve as 10 channels of the data set with analogous to the "RGB" colors in natural images, as all the channels describe the same model.
+%For the training process, we use a modified version of the UNet architecture \citep{ronneberger15}, which is built upon FCN to work with limited training samples, which is usually the case for seismic data. We modify it to meet serve our purpose, and the structure is shown in Figure~\ref{fig:sketch.eps}.
+%Obtaining the structral information of salt from seismic data is a migration or inversion problem. The state-of-the-art procedure include reverse-time migration\citep{mcmec83} and full-wave inversions\citep{tarantola84}. Those techniques project seismic data (in $x$ - $t$ domain) to model space (in $x$ - $z$ domain). So a major difference in applying FCN in image segmentation and seismic interpretation is that a domain transformation has to be embedded in the latter. 
+
+
+\tabl{tttb_cmp}{
+Comparisons of prediction accuracy (IOU) and computation time for different acquisition geometries and number of shots for inputs.}
+{
+  \begin{center}
+  \begin{tabular}{|l|l|l|}
+  \hline
+                            & IOU    & \makecell{Time \\(seconds/epoch)} \\ \hline
+  {TT geometry (1 shot)}    & 87.9\% & 18.7          \\ \hline
+  {TT geometry (10 shots)}  & 88.9\% & 55.8          \\ \hline
+  {TB geometry (1 shot)}    & 90.1\% & 18.7          \\ \hline
+  {TB geometry (10 shots)}  & 92.6\% & 55.8          \\ \hline
+  \end{tabular}
+  \end{center}
+}
+
+
+
+\section{Synthetic Tests}
+In this section, we test the proposed algorithm with synthetic data. 
+The training set has 1000 velocity models. The models are generated with number of layers ranging from 2 - 4, and the velocity ranges from 2500 to 3500 m/s with smooth interface curvatures and increases with depth. Each model also contains a salt body with arbitrary shape and position. The salt bodies have constant velocity of 4500 m/s. All the models have the same size of $x\times z = 150 \times 80$ grid points with spatial interval $h=10$ m. 
+We use eight-order in space and second-order in time finite differencing scheme to solve the acoustic wave equation with a 15 Hz Ricker wavelet.
+
+For each model, 10 sources are evenly placed from (x, z) = (0.2, 0.0) km to (1.3, 0.0) km and shot gathers are simulated one after another. 
+Two acquisition geometries are tested. In the first geometry, 150 receivers are evenly placed from (0.0, 0.7) km to (1.5, 0.7) km, which are at the bottom of the model, and form a top-bottom (TB) geometry. Signals recorded by this geometry are mostly transmitted waves;
+In the second gemetry, the 150 receivers are evenly placed from (0.0, 0.0) km to (1.5, 0.0), and is called the top-top (TT) gemetry, collecting mostly reflections. Data of the two geometries are generated and trained separatly.  
+Six sample models (a) and their corresponding TB (b) and TT (c) seismograms are plotted in Figure~\ref{fig:model_sample.eps}. The labels used for training, however, contain only 0s for the salt area, and 1s for other area (see the output in Figure~\ref{fig:sketch.eps}). 
+%Convolutional perfectly matched layer (CPML) absorbing boundary conditions \citep{komatitsch07} with a width of 20 grid points outside the models are applied on all four grid edges to reduce unwanted edge reflections.
+%Two receiver geometries are tested. In the first test, 150 receivers are evenly placed from (0.0, 0.7) km to (1.5, 0.7) km, which are below the salt bodies, and the waves recorded by this geometry are mostly transmitted waves. Six sample shots are shown in Figure~\ref{fig:shot_sample.eps} with corresponding models in Figure~\ref{fig:model_sample.eps}.
+\plot{model_sample.eps}{width=1.0\textwidth}
+{(a) Six representative models for training, and their corresponding TB (b) and TT (c) geometry seismograms (10 shots are generated for each model and only the fifth one is shown).}
+
+The network is trained on a workstation with one GFORCE GTX 1080Ti GPU and 64 GB RAM. The input seismic traces and their corresponding segmentation maps are used to train the network with the stochastic gradient descent implementation of Pytorch (\url{www.pytorch.org}). Figure~\ref{fig:cost_function.eps} shows the cross-entropy decreases during the learning process.
+
+\plot{cost_function.eps}{width=0.8\textwidth}
+{Cross-entropy decreases along with the training process.}
+
+The trained networks from TB and TT geometries are then tested with 20 samples that are not contained in their corresponding training sets. Six representative velocity models for testing are shown in Figure~\ref{fig:test_sample_tr_combo.eps}(a), and 10 shot gathers are generated for each model with the same acquisition geometries as in the training sets. The shot gathers are input to the trained network with the predictions for the TB and TT geometries are shown in Figure~\ref{fig:test_sample.eps}(b) and (c), respectively.
+\plot{test_sample_tr_combo.eps}{width=1.0\textwidth}
+{(a) Six representative velocity models for testing, and the corresponding predictions using the trained networks from TB (b) and TT(c) geometries.}
+
+We use intersection over union (IOU) as a quantitative measurement for the performance of the proposed algorithm. The IOU value is a ratio of the number of pixels that are in the intersection of ground truth and prediction divided by the number of pixels in the union of the ground truth and prediction.
+We reach an averaged IOU of 90.53\% for all the samples in the test set.
+\section{Discussion}
+The shot positions need to be fixed.
+The migration or inversion processed is performed in the down and up sampling processes. 
+
+
+\section{Conclusions}
+In this paper, we propose a data-driven technique that employs fully convolutional network to detect salt bodies directly from synthetic seismic traces collected with top-bottom geometry. Once the network training is complete, salt detection is much faster than traditional migration and interpretation, and no human interferences are involved. The test results reach high accuracy with synthetic data. Applications to real seismic data may require a large database composed of seismic trace and corresponding interpreted subsurface structures for training the network.
+
+
+\section{Acknowledgments}
+
+The research leading to this paper is supported by the Sponsors of the
+the Outstanding Young Talent Program (AUGA5710053217) from the Harbin Institute of Technology. 
+
+\newpage
+
+\bibliographystyle{seg}  % style file is seg.bst
+\bibliography{att}
+
+\end{document}

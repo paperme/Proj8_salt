@@ -1,0 +1,241 @@
+\documentclass[aspectratio=43]{beamer}
+\usetheme{Boadilla}
+%\usepackage{slashbox}
+%\usepackage{hanging}
+%\usepackage{algorithm,algorithmic}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usepackage{fancybox}
+\usepackage{mathrsfs}
+\usepackage{makecell}
+\usepackage{listings}
+\usepackage{url}
+%\usepackage[rightcaption]{sidecap}
+%\usepackage{enumitem}
+% set first line indentation
+\parindent=20pt
+\setbeamersize{text margin left=20pt,text margin right=20pt}
+
+\logo {\includegraphics[height=0.8cm]{./hitlogo.eps}}
+% items enclosed in square brackets are optional; explanation below
+\title[Salt]{Salt detection with deep learning}
+%\subtitle[subs]{Parallelization with domain decomposition}
+\author[W. Wang]{Wenlong Wang and Fangshu Yang}
+\titlegraphic{\includegraphics[height=0.8cm]{./hitlogo.eps}}
+
+\institute[HIT]{Harbin Institute of Technology}
+\date[Nov 2017]{Nov, 2017}
+
+\begin{document}
+
+% remove figure caption
+\setbeamertemplate{caption}{\insertcaption}
+
+%\frame{
+%\begin{figure}
+%\rule{5cm}{5cm}
+%\caption{Test}
+%\end{figure}
+%}
+
+
+%--- the titlepage frame -------------------------%
+\begin{frame}[plain]
+  \titlepage
+\end{frame}
+
+\begin{frame}
+\frametitle{Outline}
+\tableofcontents
+%\tableofcontents[part=1,pausesections]
+\end{frame}
+%-----------------------------------------------------------
+\section{Motivations}
+\begin{frame}{Motivations}
+\begin{itemize}
+\item{Salts are ideal for seal, thus are closely related with reservoirs.}
+\item{Traditional migration and inversion don't distinguish salt reflections and other reflections.}
+\item{Salt detection requires interpretations with heavy human efforts.}
+\item{We want to use deep learning to eliminate human efforts and automatically detect salt from seismic traces}
+\end{itemize}
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}{Previous works}
+\begin{itemize}
+\item{Jing et al., 2007, propose to compute amplitude discontinuity attributes using edge-detection techniques.}
+\item{Bertholot et al., 2013 compute texture attributes.}
+\item{Halpert and Clapp, 2008, calculate seismic reflection dip attributes.}
+\item{Amin and Deriche, 2015, suggest using multiple attributes combined for highlighting salt boundaries.} 
+\end{itemize}
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}{The aim}
+\begin{itemize}
+\item{Input: seismic trace(s) (data domain)}
+\item{Output: salt segmentation (space domain)}
+\end{itemize}
+\noindent{The major difficulty is the transformation from data domain (x-t) to space domain (x-z).}
+\end{frame}
+%-----------------------------------------------------------
+\section{The network}
+\begin{frame}
+\frametitle{Outline}
+\tableofcontents[currentsection]
+\end{frame}
+\begin{frame}{The network}
+    \includegraphics[width=\textwidth]{./sketch.eps}
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}{Network architecture}
+\begin{itemize}
+\item{Training size: 1000}
+\item{Testing size: 20}
+\item{Num of Epochs: 200}
+\item{Batch size: 10}
+\item{Num of classes: 2}
+\item{Model generation: arbitrary increasing velocity profile (2500-3500 m/s) with a convex-shaped salt (4500 m/s)}
+\end{itemize}
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}{Training Samples}
+    \includegraphics[width=\textwidth]{./model_sample.eps}
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}{Learning curve}
+    \includegraphics[width=\textwidth]{./cost_function.eps}
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}{Test results (1 shot as input)}
+    \includegraphics[width=\textwidth]{./test_sample1.eps}
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}{Test results (10 shots as input)}
+    \includegraphics[width=\textwidth]{./test_sample.eps}
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}{1 shot vs. 10 shots training}
+\begin{table}[]
+\centering
+\label{my-label}
+\begin{tabular}{|l|l|l|}
+\hline
+         & IOU    & Time (s/epoch) \\ \hline
+1 shot   & 90.1\% & 18.70          \\ \hline
+10 shots & 94.7\% & 55.82          \\ \hline
+\end{tabular}
+\end{table}
+\end{frame}
+%-----------------------------------------------------------
+\section{Deep learning vs. FWI}
+\begin{frame}
+\frametitle{Outline}
+\tableofcontents[currentsection]
+\end{frame}
+
+\begin{frame}{Net architecture}
+\begin{itemize}
+\item{Training size: 1000}
+\item{Testing size: 20}
+\item{Num of Epochs: 200}
+\item{Batch size: 10}
+\item{Num of classes: 2}
+\item{Channel size: 32}
+\item{Model generation: arbitrary convex-shaped anormaly (2500 m/s) with homogeneous background velocity 2300 m/s}
+\end{itemize}
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}{}
+ \centering
+ \includegraphics[width=1.0\textwidth]{/data/fcn_seis/fcn/labelfigs/figure1.eps}
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}{}
+ \centering
+ \includegraphics[width=1.0\textwidth]{/data/fcn_seis/fcn/labelfigs/figure2.eps}
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}{}
+ \centering
+ \includegraphics[width=1.0\textwidth]{/data/fcn_seis/fcn/labelfigs/figure3.eps}
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}{}
+ \centering
+ \includegraphics[width=1.0\textwidth]{/data/fcn_seis/fcn/labelfigs/figure4.eps}
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}{}
+ \centering
+ \includegraphics[width=1.0\textwidth]{/data/fcn_seis/fcn/labelfigs/figure5.eps}
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}{}
+ \centering
+ \includegraphics[width=1.0\textwidth]{/data/fcn_seis/fcn/labelfigs/figure51.eps}
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}{DL vs. FWI}
+\begin{table}[]
+\centering
+\label{my-label}
+\begin{tabular}{|l|l|l|}
+\hline
+                     & Training & Processing \\ \hline
+FWI (MPI 30 cores)   & N/A     & 30 mins          \\ \hline
+DL (GPU)             & 60 mins & $<$ 1 s         \\ \hline
+\end{tabular}
+\end{table}
+\end{frame}
+%-----------------------------------------------------------
+\section{Deep learning for FWI}
+\begin{frame}
+\frametitle{Outline}
+\tableofcontents[currentsection]
+\end{frame}
+\begin{frame}
+How about regression?
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}{}
+ \centering
+ \includegraphics[width=1.0\textwidth]{/data/fcn_seis/fcn/figure1.eps}
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}{}
+ \centering
+ \includegraphics[width=1.0\textwidth]{/data/fcn_seis/fcn/figure2.eps}
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}{}
+ \centering
+ \includegraphics[width=1.0\textwidth]{/data/fcn_seis/fcn/figure3.eps}
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}{}
+ \centering
+ \includegraphics[width=1.0\textwidth]{/data/fcn_seis/fcn/figure4.eps}
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}{}
+ \centering
+ \includegraphics[width=1.0\textwidth]{/data/fcn_seis/fcn/figure5.eps}
+\end{frame}
+%-----------------------------------------------------------
+\section{Discussions}
+\begin{frame}{Discussions}
+\begin{itemize}
+\item{The deep network (FCN) seems capable of understanding the transformation from data to space domain.}
+\item{Once the model is trained, the salt detection process is completely data-driven, no human efforts are involved.}
+\item{Real data application is still challenging with limited training samples.}
+\item{Another limitation is that the network also requires fixed geometry for each model.}
+\end{itemize}
+\end{frame}
+%%-----------------------------------------------------------
+\begin{frame}
+\begin{center}
+  \includegraphics[width=0.6\textwidth]{./machine_learning.eps}
+\end{center}
+\end{frame}
+
+\end{document}
+
