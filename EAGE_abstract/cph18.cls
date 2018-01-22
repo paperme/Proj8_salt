@@ -79,7 +79,7 @@
 \RequirePackage{graphicx}
 \pagestyle{fancy} % load package
 \fancyhf{} % clear any existing styles
-\fancyhead[R]{\includegraphics[width=1.66in]{cph18.eps}} % input logo top right, even and odd side, in margin
+\fancyhead[R]{\includegraphics[width=1.66in]{./Fig/cph18.eps}} % input logo top right, even and odd side, in margin
 \fancyfoot[C]{{\fontsize{10}{8}\selectfont{%
 \vspace*{-2pt}
 80\textsuperscript{th} EAGE Conference \& Exhibition 2018\\\vspace{-2pt}

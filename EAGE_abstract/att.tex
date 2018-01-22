@@ -28,7 +28,7 @@ In computer vision, semantic segmentation is a technique that attempts to partit
 To achieve automatic salt-detection from seismic data, we adopt and modify the UNet architecture \citep{ronneberger15}, which is built upon the concept of FCN. The modified network is shown in Figure~\ref{fig:sketch2}, which has a symmetric shape of a contracting path (left) and an expansive path (right).
 \begin{figure}[!htb]
   \centering
-  \includegraphics[width=1.0\textwidth]{sketch.eps}
+  \includegraphics[width=1.0\textwidth]{./Fig/sketch.eps}
   \caption{A modified UNet model to train the network for salt detection. Courtesy of \citet{ronneberger15} Figure 1.}
 \label{fig:sketch2}
 \end{figure}
@@ -69,7 +69,7 @@ For the purpose of testing the algorithm, 150 receivers are evenly placed from (
 %Two receiver geometries are tested. In the first test, 150 receivers are evenly placed from (0.0, 0.7) km to (1.5, 0.7) km, which are below the salt bodies, and the waves recorded by this geometry are mostly transmitted waves. Six sample shots are shown in Figure~\ref{fig:shot_sample.eps} with corresponding models in Figure~\ref{fig:model_sample.eps}.
 \begin{figure}[!htb]
   \centering
-  \includegraphics[width=1.0\textwidth]{model_sample.eps}
+  \includegraphics[width=1.0\textwidth]{./Fig/model_sample.eps}
   \caption{(a) Six representative models for training, and (b) their corresponding seismograms (10 shots are generated for each model and only the fifth one is shown).}
 \label{fig:model_sample}
 \end{figure}
@@ -78,7 +78,7 @@ The network is trained on a workstation with one GFORCE GTX 1080Ti GPU and 64 GB
 
 \begin{figure}[!htb]
   \centering
-  \includegraphics[width=0.5\textwidth]{cost_function.eps}
+  \includegraphics[width=0.5\textwidth]{./Fig/cost_function.eps}
   \caption{Cross-entropy decreases along with the training process.}
   \label{fig:cost_function.eps}
 \end{figure}
@@ -86,7 +86,7 @@ The network is trained on a workstation with one GFORCE GTX 1080Ti GPU and 64 GB
 The trained network is then tested with 20 samples that are not contained in the training set. Six representative velocity models for testing are shown in Figure~\ref{fig:test_salt_sample10}(a), and 10 shot gathers are generated for each model with the same acquisition geometry as in the training set. The shot gathers are input to the trained network with the predictions shown in Figure~\ref{fig:test_salt_sample10}(b).
 \begin{figure}[!htb]
   \centering
-  \includegraphics[width=1.0\textwidth]{test_salt_sample10.eps}
+  \includegraphics[width=1.0\textwidth]{./Fig/test_salt_sample10.eps}
   \caption{(a) Six representative velocity models for testing, and (b) the corresponding predictions using the trained network.}
 \label{fig:test_salt_sample10}
 \end{figure}
