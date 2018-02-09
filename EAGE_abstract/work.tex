@@ -195,34 +195,49 @@ where $\hat{a}$ and $a$ represent the true and predicted velocities.
 \end{frame}
 %-----------------------------------------------------------
 \begin{frame}{Learning curve (classification)}
-    \center
+\begin{figure}[ht]
+\centering
     \includegraphics[width=0.6\textwidth]{./Fig/unet_TB_cost.eps}
+\end{figure}
 \end{frame}
 %-----------------------------------------------------------
 \begin{frame}{Learning curve (regression)}
-    \center
+\begin{figure}[ht]
+    \centering
     \includegraphics[width=0.6\textwidth]{./Fig/vnet_TB_cost.eps}
+\end{figure}
 \end{frame}
 %-----------------------------------------------------------
 \begin{frame}{Salt detection test results (1 shot as input)}
     \center
+    \begin{figure}
     \includegraphics[width=\textwidth]{./Fig/test_salt_sample1.eps}
+    \caption{True velocity models (left) and detection results (right)}
+    \end{figure}
 \end{frame}
 %-----------------------------------------------------------
 \begin{frame}{Velocity inversion test results (1 shot as input)}
     \center
+    \begin{figure}
     \includegraphics[width=\textwidth]{./Fig/test_velocity_sample1.eps}
+    \caption{True velocity models (left) and predections results (right)}
+    \end{figure}
 \end{frame}
 %-----------------------------------------------------------
 \begin{frame}{Salt detection test results (10 shots as input)}
     \center
+    \begin{figure}
     \includegraphics[width=\textwidth]{./Fig/test_salt_sample10.eps}
-    %\includegraphics[width=\textwidth]{./Fig/test_velocity_sample10.eps}
+    \caption{True velocity models (left) and detection results (right)}
+    \end{figure}
 \end{frame}
 %-----------------------------------------------------------
 \begin{frame}{Velocity inversion test results (10 shots as input)}
     \center
+    \begin{figure}
     \includegraphics[width=\textwidth]{./Fig/test_velocity_sample10.eps}
+    \caption{True velocity models (left) and predections results (right)}
+    \end{figure}
 \end{frame}
 %-----------------------------------------------------------
 \begin{frame}{}
@@ -251,8 +266,10 @@ where, PD and GT are pixels labelled as salt by prediction and ground truth, res
 \end{frame}
 %-----------------------------------------------------------
 \begin{frame}{10 shots velocity inversion (regression)}
+\begin{figure}[ht]
 \centering
  \includegraphics[width=0.7\textwidth]{./Fig/velocity_comb.eps}
+\end{figure}
 \end{frame}
 %-----------------------------------------------------------
 \section{Conclusions}
@@ -260,7 +277,7 @@ where, PD and GT are pixels labelled as salt by prediction and ground truth, res
 \begin{itemize}
 \item{A data driven FCN network is capable of understanding the transformation from seismic data to the space domain.}
 \item{The network can be designed and trained to recognize geological bodies (salt, faults, fluids, etc.) as a classification problem, and for velocity model building as a regression problem.}
-\item{Using multiple shots as input channels is an elegent way to incorporate multi-shot seismogram in machine learning algorithms, and is demonstrated to be effective.}
+\item{Using multiple shots as input channels is an elegent way to incorporate multi-shot seismograms in machine learning algorithms, and is demonstrated to be effective.}
 \item{Once the model is trained, the salt detection and inversion process is completely data-driven; no human effort is involved.}
 \item{Real data application is still challenging with limited training samples.}
 \item{Improvements and modifications are still needed in terms of the training sample database, as well as network architectures.}
