@@ -27,7 +27,7 @@
 \makeatother
 \begin{document}
 
-\title{Direct salt shape estimation from seismic traces with Fully Convolutional Network}
+\title{Velocity model building with fully convolutional network}
 
 \renewcommand{\thefootnote}{\fnsymbol{footnote}} 
 
@@ -44,7 +44,7 @@
 
 %\footer{Wang \& McMechan}
 %\lefthead{Wang \& McMechan}
-\righthead{Salt delineation with FCN}
+%\righthead{Salt delineation with FCN}
 
 \maketitle
 
@@ -53,72 +53,49 @@
 \renewcommand{\figdir}{../Fig} % figure directory
 
 \begin{abstract}
-We introduce a novel method to estimate the shapes and positions of salt bodies directly from prestack seismic data using a modified fully convolutional network, which we use to perform both data transformation and semantic segmentation. Multiple shots are fed into the network as different channels to increase data redundency. We generate synthetic data to train the network, and once the training is completed, the algorithm is much faster than traditional migration and inversion techniques.
+We introduce a novel method to estimate the P-wave velocity model directly from prestack seismic traces using a modified fully convolutional network.
+% which we use to perform both data transformation and velocity regression. 
+Multiple shots are used as channels in the network to increase data redundency. We generate synthetic models and simulate seismic traces from them using acoustic wave equations to formulate the data set. 
 Tests with synthetic data show satisfactory results.
-We train the network with two geometries and compare the detection abilities of the proposed network.
 
 \end{abstract}
 
 \section{Introduction}
 
-Many oil and gas production targets are found in salt provinces, which are complex as a result of geological formation over time. Salt body detection is vital for subsurface interpretation as horizons and faults may be truncated by the salt. 
-Salt bodies are usually discovered with seismic imaging. However, 
-traditional seismic imaging techniques do not distinguish reflections/transmissions from salt boundaries and other geological structures, thus further processing and interpretations are required. Traditional procedures involve calculating various salt attributes \citep{jing07,berthelot13,wang15, halpert14} to highlight salt boundaries, and extracting the salt boundaries from the attribute images \citep{lomask07, ramirez16}. Although those procedure has been automated to some extend, it still requires significant human efforts \citep{wu16}. 
+Velocity model building is an essential step in seismic exploration. Good velocity models are prerequisites for reverse time migration \citep{mcmec83} and other seismic imaging techniques. They can also be used as initial models to recursively generate high resolution velocity models with optimization algorithms \citep{tarantola84}.
+Common practices for generating velocity models include tomography and full-waveform inversion (FWI). Both tomography and FWI are time-consuming, computationally expensive, and rely heavily on human interactions and quality control. 
 
-Machine learning (ML) technologies use artificial intelligence (AI) to minimize or eliminate human interference. In recent years, ML has shown its strength in many fields including image recognition, recommendation system \citep{Bobadilla13}, spam filter \citep{Androutsopoulos00}. fraud alert \citep{Ravisankar11}, etc. ML also has a long history of applications in geophysics, most of which are related to pattern recognition in seismic attributs  \citep{zeng04,zhao15} and faces classification in well logs \citep{lim05,hall16}. \citet{jia17} use ML with a supported vector regression technique for seismic data interpolation. In 2014, \citet{zhang14} propose to use neural networks (NN) to automatically predict fault directly from seismic traces. In this paper, we introduce to use recent techniques from ML and combine the processes of migration and interpretation to automatically detect salt bodies from seismic traces. 
+Recent developments of machine learning (ML) technologies provide the possibility to reduce or completely remove human intervention from many formerly human-curated activities, for example, image recognition, voice recognition, recommendation systems and etc. 
+%use artificial intelligence (AI) to minimize or eliminate human interference. In recent years, ML has shown its strength in many fields including image recognition, recommendation system \citep{Bobadilla13}, spam filter \citep{Androutsopoulos00}. fraud alert \citep{Ravisankar11}, etc. 
+Many ML techiniques are built with artificial neural networks (NNs), which have a long history being used in geophysics. However, most of the applications of NN focus on pattern recognition in seismic attributs  \citep{zeng04,zhao15} and faces classification in well logs \citep{lim05,hall16}. A more challenging and interesting problem is to input the NN with seismic traces and train the network to give gelogical interpretations of the subsurface.
+In 2014, \citet{zhang14} propose to use neural networks to automatically predict fault directly from seismic traces. Araya-Polo \citet{araya18} build velocity models from seismic traces with deep neural network (DNN). 
+In this paper, we work on the same problem, but we use a modified fully covolutional network, which has much fewer parameters and thus is more efficient than traditional DNNs. We built a similar network for automatic salt detection using seismic traces \citep{wenlong18_salt}
 
-Salt body detection aims at grouping salt from other sediments in an image, which resembles a semantic segmentation problem in computer vision techniques. 
-The fully convolutional network (FCN) \citep{long15} is a state-of-the-art network that performs pixel-wise semantic segmentation with high accuracy. In this paper, we modify the FCN to delineate salt bodies directly from seismic traces. The paper is organized as follows, we first illustrate the methodology of using FCN for salt detection from seismic data. Tests with synthetic data are then performed to show the results. 
+The FCN \citep{long15} is a state-of-the-art network that performs pixel-wise semantic segmentation and regression with high accuracy. In this paper, we modify the FCN to predict velocity values directly from seismic traces. The paper is organized as follows, we first illustrate the methodology of using FCN for velocity model building using seismic data. Tests with synthetic data are then performed to show the results.
 
 
 \section{Methodology}
-In computer vision, semantic segmentation is a technique that attempts to partition an image into semantically meaningful parts, and classify each part into one of the pre-defined classes. FCN is currently one of the best ML networks that achieves pixelwise predictions of images. However, for the task of salt-detection using seismic traces as input, the seismic data needs to be projected from the data domain ($x$ - $t$) to space domain ($x$ - $z$), which is an inverse problem in geophysics, and also needs to be completed by the proposed neural network.
-%salt-detection needs to achieve more and thus we apply a modified FCN to detect salt bodies.
+%In computer vision, semantic segmentation is a technique that attempts to partition an image into semantically meaningful parts, and classify each part into one of the pre-defined classes. 
+%FCN is currently one of the best ML networks that achieves pixelwise predictions of images. However, for the task of salt-detection using seismic traces as input, the seismic data needs to be projected from the data domain ($x$ - $t$) to space domain ($x$ - $z$), which is an inverse problem in geophysics, and also needs to be completed by the proposed neural network.
 
-To achieve automatic salt-detection from seismic data, we adopt and modify the UNet architecture \citep{ronneberger15}, which is built upon the concept of FCN. The modified network is shown in Figure~\ref{fig:sketch.eps}, which has a symmetric shape of a contracting path (left) and an expansive path (right).
-\plot{sketch.eps}{width=1.0\textwidth}
+To achieve velocity model building directly from seismic data, we adopt and modify the UNet architecture \citep{ronneberger15}, which is built upon the concept of FCN. The modified network is shown in Figure~\ref{fig:sketch.eps}, which has a symmetric shape of a contracting path (left) and an expansive path (right).
+\fullplot{sketch.eps}{width=1.0\textwidth}
 {A modified UNet model to train the network for salt detection. Courtesy of \citet{ronneberger15} Figure 1.}
 %The UNet is composed of two parts of network: contracting layers and expanding or upsampling layers. 
 We made two modifications to the original UNet to fit into the task of salt detection. 
 
 First, the original UNet read input images in RGB color channels, while for processing seismic data, we assign different shot gathers, which are generated at different source locations but from the same model, as channels for the input. So the number of channels for the input is the same as the number of sources for each model. The multi-shot seismic data are fed into the network together to improve data redundancy. Second, different from a usual UNet network, whose output and input are in the same (image) domain. We expect the trained network to realize both domain projection (migration) and semantic segmentation (interpretation), i.e. to transform the data from $x$ - $t$ domain to $x$ - $z$ domain and tag the salt bodies simultaneously. To complete that, we truncate the final output layer to the size of the model, so the neural network can train itself during the contracting and expanding processes to map the data to the model domain.
-The labels we use for the training has the same size as the model with the salt body marked by 0s and 1s for others.
+The labels we use for the training are the true velocity models for generating the seismic traces.
 
-The cost function is obtained by a pixel-size softmax over the final feature map combined with the cross-entropy loss function. The softmax is defined as 
+The loss function is defined as the squared difference between the ground-truth velocity model $V$ and the predicted velocity model $\tilde{V}$
 \begin{equation}
-p_n(\boldsymbol{x})=\frac{e^{{a_n(\boldsymbol{x})}}}{\sum_{n^\prime=1}^{N}e^{a_{n^\prime}(\boldsymbol{x})}},
-\label{eqn:softmax}
+E = \sum_{\boldsymbol{x}} (V(x)-\tilde{V}(x))^2
+\label{loss}
 \end{equation}
-where $a_{n}(\boldsymbol{x})$ denotes the activation in feature channel $n$ at the pixel positon $\boldsymbol{x}$. In our case, there are two classes: salt (0) and others (1), so the total number of classes N = 2. $p_n(\boldsymbol{x})$ is the approximated maximum-function. The cross entropy then measures the distance between the predicted values and targets
-\begin{equation}
-E=\sum_{\boldsymbol{x}}
-	\hat{p}_{l(\boldsymbol{x})}(\boldsymbol{x})
-	\mathrm{log}[
-	p_{l(\boldsymbol{x})}(\boldsymbol{x})
-	],
-\label{eqn:crossentropy}
-\end{equation}
-where the subscript $l(\boldsymbol{x})$ indicates the channel that are true at pixel position $\boldsymbol{x}$, and $\hat{p}$ is the ground truth.
+where $\boldsymbol{x}$ indicates the pixel positions in the velocity model.
 %For each model in the training set, the 10 shot gathers serve as 10 channels of the data set with analogous to the "RGB" colors in natural images, as all the channels describe the same model.
 %For the training process, we use a modified version of the UNet architecture \citep{ronneberger15}, which is built upon FCN to work with limited training samples, which is usually the case for seismic data. We modify it to meet serve our purpose, and the structure is shown in Figure~\ref{fig:sketch.eps}.
 %Obtaining the structral information of salt from seismic data is a migration or inversion problem. The state-of-the-art procedure include reverse-time migration\citep{mcmec83} and full-wave inversions\citep{tarantola84}. Those techniques project seismic data (in $x$ - $t$ domain) to model space (in $x$ - $z$ domain). So a major difference in applying FCN in image segmentation and seismic interpretation is that a domain transformation has to be embedded in the latter. 
-
-
-\tabl{tttb_cmp}{
-Comparisons of prediction accuracy (IOU) and computation time for different acquisition geometries and number of shots for inputs.}
-{
-  \begin{center}
-  \begin{tabular}{|l|l|l|}
-  \hline
-                            & IOU    & \makecell{Time \\(seconds/epoch)} \\ \hline
-  {TT geometry (1 shot)}    & 87.9\% & 18.7          \\ \hline
-  {TT geometry (10 shots)}  & 88.9\% & 55.8          \\ \hline
-  {TB geometry (1 shot)}    & 90.1\% & 18.7          \\ \hline
-  {TB geometry (10 shots)}  & 92.6\% & 55.8          \\ \hline
-  \end{tabular}
-  \end{center}
-}
-
 
 
 \section{Synthetic Tests}
@@ -131,13 +108,12 @@ Two acquisition geometries are tested. In the first geometry, 150 receivers are 
 In the second gemetry, the 150 receivers are evenly placed from (0.0, 0.0) km to (1.5, 0.0), and is called the top-top (TT) gemetry, collecting mostly reflections. Data of the two geometries are generated and trained separatly.  
 Six sample models (a) and their corresponding TB (b) and TT (c) seismograms are plotted in Figure~\ref{fig:model_sample.eps}. The labels used for training, however, contain only 0s for the salt area, and 1s for other area (see the output in Figure~\ref{fig:sketch.eps}). 
 %Convolutional perfectly matched layer (CPML) absorbing boundary conditions \citep{komatitsch07} with a width of 20 grid points outside the models are applied on all four grid edges to reduce unwanted edge reflections.
-%Two receiver geometries are tested. In the first test, 150 receivers are evenly placed from (0.0, 0.7) km to (1.5, 0.7) km, which are below the salt bodies, and the waves recorded by this geometry are mostly transmitted waves. Six sample shots are shown in Figure~\ref{fig:shot_sample.eps} with corresponding models in Figure~\ref{fig:model_sample.eps}.
-\plot{model_sample.eps}{width=1.0\textwidth}
-{(a) Six representative models for training, and their corresponding TB (b) and TT (c) geometry seismograms (10 shots are generated for each model and only the fifth one is shown).}
+\fullplot{../EAGE_abstract/Fig/model_sample.eps}{width=1.0\textwidth}
+{(a) Six representative models for training, and their corresponding geometry seismograms (10 shots are generated for each model and only the fifth one is shown).}
 
 The network is trained on a workstation with one GFORCE GTX 1080Ti GPU and 64 GB RAM. The input seismic traces and their corresponding segmentation maps are used to train the network with the stochastic gradient descent implementation of Pytorch (\url{www.pytorch.org}). Figure~\ref{fig:cost_function.eps} shows the cross-entropy decreases during the learning process.
 
-\plot{cost_function.eps}{width=0.8\textwidth}
+\plot{cost_function.eps}{width=0.5\textwidth}
 {Cross-entropy decreases along with the training process.}
 
 The trained networks from TB and TT geometries are then tested with 20 samples that are not contained in their corresponding training sets. Six representative velocity models for testing are shown in Figure~\ref{fig:test_sample_tr_combo.eps}(a), and 10 shot gathers are generated for each model with the same acquisition geometries as in the training sets. The shot gathers are input to the trained network with the predictions for the TB and TT geometries are shown in Figure~\ref{fig:test_sample.eps}(b) and (c), respectively.
