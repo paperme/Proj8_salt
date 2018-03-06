@@ -53,46 +53,52 @@
 \renewcommand{\figdir}{../Fig} % figure directory
 
 \begin{abstract}
-We introduce a novel method to estimate the P-wave velocity model directly from prestack seismic traces using a modified fully convolutional network.
-% which we use to perform both data transformation and velocity regression. 
-Multiple shots are used as channels in the network to increase data redundency. We generate synthetic models and simulate seismic traces from them using acoustic wave equations to formulate the data set. 
-Tests with synthetic data show satisfactory results.
+We introduce a novel method to estimate the P-wave velocity models directly from the prestack seismic traces using a modified fully convolutional network.
+We train the network with synthetic models and corresponding seismic traces which are simulated from those models with acoustic wave equations. 
+Multiple shots are used as channels in the network to increase data redundency.
+The training process is computationally expensive, but it only happens once up front. 
+The trained network is then used to predict velocity models from testing seismic traces, and it shows satisfactory results. The cost for predicting velocity models is negligible once the training is complete.
+%The cost for predicting velocity models using the trained network is negligible. 
+%Tests with synthetic data show satisfactory results.
 
 \end{abstract}
 
 \section{Introduction}
 
-Velocity model building is an essential step in seismic exploration. Good velocity models are prerequisites for reverse time migration \citep{mcmec83} and other seismic imaging techniques. They can also be used as initial models to recursively generate high resolution velocity models with optimization algorithms \citep{tarantola84}.
-Common practices for generating velocity models include tomography and full-waveform inversion (FWI). Both tomography and FWI are time-consuming, computationally expensive, and rely heavily on human interactions and quality control. 
+Velocity model building is an essential step in seismic exploration. Good velocity models are prerequisites for reverse time migration \citep{mcmec83} and other seismic imaging techniques. The estimated velocity models can also be used as initial models to recursively generate high resolution velocity models with optimization algorithms \citep{tarantola84}.
+Common practices for generating velocity models include tomography and full-waveform inversion (FWI). However, both tomography and FWI are time-consuming, computationally expensive, and rely heavily on human interactions and quality control. 
 
-Recent developments of machine learning (ML) technologies provide the possibility to reduce or completely remove human intervention from many formerly human-curated activities, for example, image recognition, voice recognition, recommendation systems and etc. 
-%use artificial intelligence (AI) to minimize or eliminate human interference. In recent years, ML has shown its strength in many fields including image recognition, recommendation system \citep{Bobadilla13}, spam filter \citep{Androutsopoulos00}. fraud alert \citep{Ravisankar11}, etc. 
-Many ML techiniques are built with artificial neural networks (NNs), which have a long history being used in geophysics. However, most of the applications of NN focus on pattern recognition in seismic attributs  \citep{zeng04,zhao15} and faces classification in well logs \citep{lim05,hall16}. A more challenging and interesting problem is to input the NN with seismic traces and train the network to give gelogical interpretations of the subsurface.
-In 2014, \citet{zhang14} propose to use neural networks to automatically predict fault directly from seismic traces. Araya-Polo \citet{araya18} build velocity models from seismic traces with deep neural network (DNN). 
-In this paper, we work on the same problem, but we use a modified fully covolutional network, which has much fewer parameters and thus is more efficient than traditional DNNs. We built a similar network for automatic salt detection using seismic traces \citep{wenlong18_salt}
+Recent developments of machine learning (ML) technologies provide the possibility to reduce or completely remove human intervention from many formerly human-curated activities, for example, image recognition, voice recognition and etc. Geophysicists may also be empowered with those new technologies, and seek possible applications in seismic data processing routines to minimize human intervenes.
 
-The FCN \citep{long15} is a state-of-the-art network that performs pixel-wise semantic segmentation and regression with high accuracy. In this paper, we modify the FCN to predict velocity values directly from seismic traces. The paper is organized as follows, we first illustrate the methodology of using FCN for velocity model building using seismic data. Tests with synthetic data are then performed to show the results.
+Many ML algorithms are built with artificial neural networks (NNs), which have a long history being used in geophysics. However, most of the applications of NN focus on pattern recognition in seismic attributs  \citep{zeng04,zhao15} and faces classification in well logs \citep{lim05,hall16}. A more challenging and interesting application is to input the network with prestack seismic traces and train the network to directly give gelogical interpretations of the subsurface. Early pioneers who implement NN for velocity estimation include \citet{roth94} and \citet{nath99}.
+In 2014, \citet{zhang14} propose to use neural networks for automatic fault prediction from seismic traces. Araya-Polo \citet{araya18} build velocity models from seismic traces with deep neural network (DNN). 
+In this paper, we work on the same problem of velocity model building, but we use a modified fully covolutional network, which has much fewer parameters and thus is more efficient than traditional DNNs, and multiple shots can be easily cooperated as channels. A similar network is also built for automatic salt detection \citep{wenlong18_salt}.
+
+The paper is organized as follows, we first introduce the archetecture of the network for velocity model building using seismic data. Tests with synthetic data are then performed to show the results. To limit the scope of this paper, we focus on 2D models and isotropic acoustic wave equations are used for simulating synthetic traces.
 
 
 \section{Methodology}
-%In computer vision, semantic segmentation is a technique that attempts to partition an image into semantically meaningful parts, and classify each part into one of the pre-defined classes. 
-%FCN is currently one of the best ML networks that achieves pixelwise predictions of images. However, for the task of salt-detection using seismic traces as input, the seismic data needs to be projected from the data domain ($x$ - $t$) to space domain ($x$ - $z$), which is an inverse problem in geophysics, and also needs to be completed by the proposed neural network.
 
-To achieve velocity model building directly from seismic data, we adopt and modify the UNet architecture \citep{ronneberger15}, which is built upon the concept of FCN. The modified network is shown in Figure~\ref{fig:sketch.eps}, which has a symmetric shape of a contracting path (left) and an expansive path (right).
+Velocity model building from seismic traces involves data transformation from seismic traces ($x$ - $t$) to the space/model domain ($x$ - $z$), which poses as an inverse problem in geophysics. Neurel networks are capable of approximating any continuous function up to a specified accuracy \citep{hornik89}, which provides the theoretical basis for this research.
+
+The prototype network that we adopt for velocity model building is called fully convolutional network (FCN) \citep{long15}, which is a state-of-the-art network that performs pixel-wise semantic segmentation and regression for images with high accuracy. The original FCN consists of a series of convolutional units (convolution, pooling, and activation functions) and a deconvolution layer for upsampling. A UNet architecture \citep{ronneberger15} is built on FCN by constructing a U-shaped network which has a symmetric shape of a contracting path and an expansive path (see Figure 1 in \citet{ronneberger15}), and demonstrates improved prediction accuracy. 
+
+To achieve velocity model building directly from seismic data, we modify the UNet architecture, and it is shown in Figure~\ref{fig:sketch.eps}.
+We made two important modifications to the original UNet to fit our task of velocity model building. 
+First, the original UNet is designed for image segmentation and reads input images in RGB color channels, while for processing seismic data, we assign different shot gathers, which are generated at different source locations but from the same model, as channels for the input. So the number of channels for the input is the same as the number of sources for each model. The multi-shot seismic data are fed into the network together to improve data redundancy. Second, different from an original UNet architecture, whose output and input are in the same (image) domain and share the same size. We trained the network to perform domain transformation from seismic data domain ($x$ - $t$) to the model domain ($x$ - $z$). To handle the size discrepancy between inputs and outputs, before applying the loss function, we truncate the final output layer to the size of the model. The proposed network in Figure~\ref{fig:sketch.eps} is capable of training itself during the contracting and expanding processes to map the data to the model domain.
+
 \fullplot{sketch.eps}{width=1.0\textwidth}
-{A modified UNet model to train the network for salt detection. Courtesy of \citet{ronneberger15} Figure 1.}
+{A modified UNet architecture to train the network for velocity model building. Courtesy of \citet{ronneberger15} Figure 1.}
 %The UNet is composed of two parts of network: contracting layers and expanding or upsampling layers. 
-We made two modifications to the original UNet to fit into the task of salt detection. 
-
-First, the original UNet read input images in RGB color channels, while for processing seismic data, we assign different shot gathers, which are generated at different source locations but from the same model, as channels for the input. So the number of channels for the input is the same as the number of sources for each model. The multi-shot seismic data are fed into the network together to improve data redundancy. Second, different from a usual UNet network, whose output and input are in the same (image) domain. We expect the trained network to realize both domain projection (migration) and semantic segmentation (interpretation), i.e. to transform the data from $x$ - $t$ domain to $x$ - $z$ domain and tag the salt bodies simultaneously. To complete that, we truncate the final output layer to the size of the model, so the neural network can train itself during the contracting and expanding processes to map the data to the model domain.
 The labels we use for the training are the true velocity models for generating the seismic traces.
 
-The loss function is defined as the squared difference between the ground-truth velocity model $V$ and the predicted velocity model $\tilde{V}$
+The loss function is defined in the model domain as the squared difference between the ground-truth velocity model $V$ and the predicted velocity model $\tilde{V}$
 \begin{equation}
 E = \sum_{\boldsymbol{x}} (V(x)-\tilde{V}(x))^2
 \label{loss}
 \end{equation}
-where $\boldsymbol{x}$ indicates the pixel positions in the velocity model.
+where $\boldsymbol{x}$ indicates the pixel positions in the velocity model. The groud-truth velocity models $V$ is given during the training process, but are hidden for testing after the training.
+
 %For each model in the training set, the 10 shot gathers serve as 10 channels of the data set with analogous to the "RGB" colors in natural images, as all the channels describe the same model.
 %For the training process, we use a modified version of the UNet architecture \citep{ronneberger15}, which is built upon FCN to work with limited training samples, which is usually the case for seismic data. We modify it to meet serve our purpose, and the structure is shown in Figure~\ref{fig:sketch.eps}.
 %Obtaining the structral information of salt from seismic data is a migration or inversion problem. The state-of-the-art procedure include reverse-time migration\citep{mcmec83} and full-wave inversions\citep{tarantola84}. Those techniques project seismic data (in $x$ - $t$ domain) to model space (in $x$ - $z$ domain). So a major difference in applying FCN in image segmentation and seismic interpretation is that a domain transformation has to be embedded in the latter. 
