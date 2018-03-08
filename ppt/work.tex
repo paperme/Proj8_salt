@@ -1,0 +1,311 @@
+\documentclass[aspectratio=169]{beamer}
+\usetheme{Boadilla}
+%\usepackage{slashbox}
+%\usepackage{hanging}
+%\usepackage{algorithm,algorithmic}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usepackage{fancybox}
+\usepackage{mathrsfs}
+\usepackage{makecell}
+\usepackage{listings}
+\usepackage{url}
+%\usepackage[rightcaption]{sidecap}
+%\usepackage{enumitem}
+% set first line indentation
+\parindent=20pt
+\setbeamersize{text margin left=20pt,text margin right=20pt}
+
+\logo {\includegraphics[height=0.8cm]{./hitlogo.eps}}
+% items enclosed in square brackets are optional; explanation below
+\title[Machine Learning]{Seismic imaging with deep learning}
+%\subtitle[subs]{Parallelization with domain decomposition}
+\author[W. Wang]{Wenlong Wang and Fangshu Yang}
+\titlegraphic{\includegraphics[height=0.8cm]{./hitlogo.eps}}
+
+\institute[HIT]{Harbin Institute of Technology}
+\date[Feb 2018]{Feb, 2018}
+
+\begin{document}
+
+% remove figure caption
+\setbeamertemplate{caption}{\insertcaption}
+
+%\frame{
+%\begin{figure}
+%\rule{5cm}{5cm}
+%\caption{Test}
+%\end{figure}
+%}
+
+
+%--- the titlepage frame -------------------------%
+\begin{frame}[plain]
+  \titlepage
+\end{frame}
+
+\begin{frame}
+\frametitle{Outline}
+\tableofcontents
+%\tableofcontents[part=1,pausesections]
+\end{frame}
+%-----------------------------------------------------------
+\section{Motivations}
+\begin{frame}{Motivations}
+\begin{itemize}
+\item{Explore possible applications of deep learning to seismic imaging and inversion.}
+%\item{Traditional migration and inversion don't distinguish salt reflections and other reflections.}
+%\item{Salt detection requires interpretations with heavy human efforts.}
+\item{Use deep learning to reduce or remove human labor and automatically obtain comprehensible geophysical information from seismic traces.}
+\item{Modify existing image recognition neural networks to solve specific geophysical problems.}
+\end{itemize}
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}{Previous work}
+\begin{itemize}
+\item{Zhang et al., 2014, detect faults directly from seismic traces using machine learning.}
+\item{Waldeland and Solberg, 2017, apply convolutional neural network for salt classification.}
+\item{Lin et al., 2017, utilize kernel ridge regression for fault detection.}
+\item{Araya-Polo et al., 2017, use features detected in the prestack domain for fault detection.}
+\item{Huang et al., 2017, develop a CNN-based platform to detect faults from various seismic attributes.}
+\item{Araya-Polo et al., 2018, use a deep neural network (DNN) for velocity model building.}
+\end{itemize}
+\end{frame}
+%-----------------------------------------------------------
+\section{The network}
+\begin{frame}{Fully connected neural network}
+
+\begin{columns}
+  \begin{column}{0.50\textwidth}
+    \center
+    \includegraphics[width=0.7\textwidth]{./nn.eps}
+  \end{column}
+  \begin{column}{0.50\textwidth}
+    \center
+    \includegraphics[width=\textwidth]{./dnn.eps}
+  \end{column}
+\end{columns}
+
+\tiny{\url{https://en.wikipedia.org/wiki/Artificial_neural_network}}
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}{Convolutional neural network}
+
+\center
+\includegraphics[width=0.7\textwidth]{./cnn.eps}
+
+\tiny{\url{https://stats.stackexchange.com/questions/128880/number-of-feature-maps-in-convolutional-neural-networks/168444}}
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}{Fully convolutional network}
+    \center
+    \includegraphics[width=0.7\textwidth]{./fcn.eps}
+    %\includegraphics[width=\textwidth]{./sketch.eps}
+
+\tiny{Long, J., Shelhamer, E. and Darrell, T., 2015, Fully Convolutional Models for Semantic Segmentation, arXiv: 1411.4038.}
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}
+\begin{block}{The goal}
+\begin{itemize}
+\item{Input: Prestack seismic traces}
+\item{Output: salt segmentation (by classification) or velocity (by regression)}
+\end{itemize}
+\end{block}
+\begin{block}{What's new?}
+\begin{itemize}
+\item{We use multiple shots as channels for input to the network.}
+\item{We adapt a fully-convolutional network for salt detection and velocity model building.}
+\end{itemize}
+\end{block}
+\noindent{The major difficulty is the transformation from the data domain (x-t) to the space domain (x-z).}
+\end{frame}
+%-----------------------------------------------------------
+%\section{The Cost functions}
+\begin{frame}{Loss function (classification)}
+\noindent The loss function for classification is obtained by a pixel-size softmax over the final feature map combined with a cross-entropy loss function. The softmax is defined as
+\begin{equation}
+p_n(\boldsymbol{x})=\frac{e^{{a_n(\boldsymbol{x})}}}{\sum_{n^\prime=1}^{N}e^{a_{n^\prime}(\boldsymbol{x})}}.
+\label{eqn:softmax}
+\end{equation}
+
+\noindent Cross entropy then measures the distance between the predicted values and the targets
+\begin{equation}
+E=-\sum_{\boldsymbol{x}}
+        \hat{p}_{l(\boldsymbol{x})}(\boldsymbol{x})
+        \mathrm{log}[
+        p_{l(\boldsymbol{x})}(\boldsymbol{x})
+        ],
+\label{eqn:crossentropy}
+\end{equation}
+where the subscript $l(\boldsymbol{x})$ indicates the channel that are labelled salt at pixel position $\boldsymbol{x}$, and $\hat{p}$ is the ground truth.
+
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}{Loss function (regression)}
+\noindent The loss function for regression is the squared error between the predicted value and the ground truth (velocities). 
+\begin{equation}
+E=\sum_{\boldsymbol{x}}
+        [\hat{a}(\boldsymbol{x})-
+        a(\boldsymbol{x})]^2
+        ,
+\label{eqn:crossentropy}
+\end{equation}
+where $\hat{a}$ and $a$ represent the true and predicted velocities.
+
+\end{frame}
+%-----------------------------------------------------------
+\section{Tests and results}
+\begin{frame}{Hyper parameters}
+
+\begin{itemize}
+\item{Model generation: arbitrary increasing velocity profile (2500-3500 m/s) with a salt body (4500 m/s).}
+\item{Computation: Intel Xeon E5-2630 2.2 GHz, 64G RAM, GeForce 1080Ti GPU.}
+\item{Network architecture: A total number of 21 layers of convolution, ReLU and max pooling layers.}
+\end{itemize}
+
+\begin{columns}
+  \begin{column}{0.50\textwidth}
+  \begin{block}{Modeling parameters}
+    \begin{itemize}
+    \item{Model grid size: 150 $\times$ 80}
+    \item{Spatial interval: 10 m}
+    \item{Shots per model: 10}
+    \item{Geometry: Top-bottom}
+    \item{Dominant frequency: 15 Hz}
+    \end{itemize}
+  \end{block}
+  \end{column}
+  \begin{column}{0.50\textwidth}
+  \begin{block}{Training/testing parameters}
+    \begin{itemize}
+    \item{Training size: 1000}
+    \item{Channels (shots) per sample: 10}
+    \item{Testing size: 20}
+    \item{Num of Epochs: 200}
+    \item{Batch size: 10}
+    \end{itemize}
+  \end{block}
+  \end{column}
+\end{columns}
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}{Training samples}
+    \includegraphics[width=\textwidth]{./model_sample1.eps}
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}{Learning curve (classification)}
+    \center
+    \includegraphics[width=0.6\textwidth]{./unet_TB_cost.eps}
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}{Learning curve (regression)}
+    \center
+    \includegraphics[width=0.6\textwidth]{./vnet_TB_cost.eps}
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}{Salt detection test results (1 shot as input)}
+    \center
+    \includegraphics[width=\textwidth]{./test_salt_sample1.eps}
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}{Velocity inversion test results (1 shot as input)}
+    \center
+    \includegraphics[width=\textwidth]{./test_velocity_sample1.eps}
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}{Salt detection test results (10 shots as input)}
+    \center
+    \includegraphics[width=\textwidth]{./test_salt_sample10.eps}
+    %\includegraphics[width=\textwidth]{./test_velocity_sample10.eps}
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}{Velocity inversion test results (10 shots as input)}
+    \center
+    \includegraphics[width=\textwidth]{./test_velocity_sample10.eps}
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}{}
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}{}
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}{1 shot vs. 10 shots (classification)}
+\noindent 
+We use intersection over union (IOU) as a measurement for classification accuracy:
+\begin{equation}
+IOU=\frac{PD \cap GT}{PD \cup GT},
+\end{equation}
+where, PD and GT are pixels labelled as salt by prediction and ground truth, respectively.
+\begin{table}[]
+\centering
+\label{Comparison}
+\begin{tabular}{|l|l|l|}
+\hline
+         & IOU    & Time (s/epoch) \\ \hline
+1 shot   & 90.1\% & 18.70          \\ \hline
+10 shots & 94.7\% & 55.82          \\ \hline
+\end{tabular}
+\end{table}
+\end{frame}
+%-----------------------------------------------------------
+\begin{frame}{10 shots velocity inversion (regression)}
+\centering
+ \includegraphics[width=0.7\textwidth]{./velocity_comb.eps}
+\end{frame}
+%-----------------------------------------------------------
+%\begin{frame}{}
+% \centering
+% \includegraphics[width=1.0\textwidth]{/data/fcn_seis/fcn/labelfigs/figure3.eps}
+%\end{frame}
+%%-----------------------------------------------------------
+%\begin{frame}{}
+% \centering
+% \includegraphics[width=1.0\textwidth]{/data/fcn_seis/fcn/labelfigs/figure4.eps}
+%\end{frame}
+%%-----------------------------------------------------------
+%\begin{frame}{}
+% \centering
+% \includegraphics[width=1.0\textwidth]{/data/fcn_seis/fcn/labelfigs/figure5.eps}
+%\end{frame}
+%%-----------------------------------------------------------
+%\begin{frame}{}
+% \centering
+% \includegraphics[width=1.0\textwidth]{/data/fcn_seis/fcn/labelfigs/figure51.eps}
+%\end{frame}
+%-----------------------------------------------------------
+\section{Conclusions}
+\begin{frame}{Conclusions}
+\begin{itemize}
+\item{A data driven FCN network is capable of understanding the transformation from seismic data to space domain.}
+\item{The network can be designed and trained to recognize geological bodies (salt, fault, fluid, etc.) as a classification problem, and for velocity model building as a regression problem.}
+\item{Using multiple shots as channels as input is an elegent way to incorperate multi-shot seismogram in machine learning algorithms, and is demonstrated to be effective.}
+\item{Once the model is trained, the salt detection and inversion process is completely data-driven; no human effort is involved.}
+\item{Real data application is still challenging with limited training samples.}
+\item{Improvements and modifications are still needed in terms of the training sample database, as well as network architectures.}
+%\item{Another limitation is that the network also requires fixed geometry for each model.}
+\end{itemize}
+\end{frame}
+%%-----------------------------------------------------------
+\begin{frame}{Acknowledgment}
+\noindent{I'd like to thank my supervisor Prof. George McMechan.
+Thank members of HIT geophysical center for discussions and collaborations.
+I also thank the sponsors of the UT-Dallas Geophysical Consortium for the sponsorship.}
+\end{frame}
+
+%%-----------------------------------------------------------
+%\begin{frame}{Acknowledgment}
+%\noindent{I'd like to thank Prof. Ma for giving me this opportunity to present my work, and all the members of HIT geophysical center for their hard work to make this event happen.
+%} 
+%\end{frame}
+
+%%-----------------------------------------------------------
+%\begin{frame}
+%\begin{center}
+%  \includegraphics[width=0.6\textwidth]{./machine_learning.eps}
+%\end{center}
+%\end{frame}
+
+\end{document}
+

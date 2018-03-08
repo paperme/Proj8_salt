@@ -27,7 +27,7 @@
 \makeatother
 \begin{document}
 
-\title{Velocity model building with fully convolutional network}
+\title{Velocity model building with a modified fully convolutional network}
 
 \renewcommand{\thefootnote}{\fnsymbol{footnote}} 
 
@@ -87,17 +87,17 @@ To achieve velocity model building directly from seismic data, we modify the UNe
 We made two important modifications to the original UNet to fit our task of velocity model building. 
 First, the original UNet is designed for image segmentation and reads input images in RGB color channels, while for processing seismic data, we assign different shot gathers, which are generated at different source locations but from the same model, as channels for the input. So the number of channels for the input is the same as the number of sources for each model. The multi-shot seismic data are fed into the network together to improve data redundancy. Second, different from an original UNet architecture, whose output and input are in the same (image) domain and share the same size. We trained the network to perform domain transformation from seismic data domain ($x$ - $t$) to the model domain ($x$ - $z$). To handle the size discrepancy between inputs and outputs, before applying the loss function, we truncate the final output layer to the size of the model. The proposed network in Figure~\ref{fig:sketch.eps} is capable of training itself during the contracting and expanding processes to map the data to the model domain.
 
-\fullplot{sketch.eps}{width=1.0\textwidth}
+\fullplot{sketch_vnet.eps}{width=1.0\textwidth}
 {A modified UNet architecture to train the network for velocity model building. Courtesy of \citet{ronneberger15} Figure 1.}
 %The UNet is composed of two parts of network: contracting layers and expanding or upsampling layers. 
 The labels we use for the training are the true velocity models for generating the seismic traces.
 
-The loss function is defined in the model domain as the squared difference between the ground-truth velocity model $V$ and the predicted velocity model $\tilde{V}$
+A loss function measures the distance between the predictions and the groudtruth. The loss function that we applid is defined as the squared difference (L2) between the groundtruth velocity model $V$ and the predicted velocity model $\tilde{V}$
 \begin{equation}
 E = \sum_{\boldsymbol{x}} (V(x)-\tilde{V}(x))^2
 \label{loss}
 \end{equation}
-where $\boldsymbol{x}$ indicates the pixel positions in the velocity model. The groud-truth velocity models $V$ is given during the training process, but are hidden for testing after the training.
+where $\boldsymbol{x}$ indicates the pixel positions in the velocity model. The groud-truth velocity models $V$ is given during the training process, but are hidden for testing after the training. Note that the loss function is different from that from a full wave inversion, in which the loss function measures the squared difference between true and simulated seismograms.
 
 %For each model in the training set, the 10 shot gathers serve as 10 channels of the data set with analogous to the "RGB" colors in natural images, as all the channels describe the same model.
 %For the training process, we use a modified version of the UNet architecture \citep{ronneberger15}, which is built upon FCN to work with limited training samples, which is usually the case for seismic data. We modify it to meet serve our purpose, and the structure is shown in Figure~\ref{fig:sketch.eps}.
@@ -106,28 +106,43 @@ where $\boldsymbol{x}$ indicates the pixel positions in the velocity model. The 
 
 \section{Synthetic Tests}
 In this section, we test the proposed algorithm with synthetic data. 
-The training set has 1000 velocity models. The models are generated with number of layers ranging from 2 - 4, and the velocity ranges from 2500 to 3500 m/s with smooth interface curvatures and increases with depth. Each model also contains a salt body with arbitrary shape and position. The salt bodies have constant velocity of 4500 m/s. All the models have the same size of $x\times z = 150 \times 80$ grid points with spatial interval $h=10$ m. 
+The training set contains 1000 velocity models. 
+The models are generated with the number of layers ranging from 2 - 4, and the velocity ranges from 2500 to 3500 m/s with smooth interface curvatures and increases with depth. 
+Each model contains a salt body with an arbitrary shape and position. The salt bodies have constant velocity of 4500 m/s. 
+ All the models have the same size of $x\times z = 150 \times 80$ grid points with spatial interval $h=10$ m. 
 We use eight-order in space and second-order in time finite differencing scheme to solve the acoustic wave equation with a 15 Hz Ricker wavelet.
+Convolutional perfectly matched layer (CPML) absorbing boundary conditions \citep{komatitsch07} are applied on all four grid edges to reduce unwanted edge reflections.
 
 For each model, 10 sources are evenly placed from (x, z) = (0.2, 0.0) km to (1.3, 0.0) km and shot gathers are simulated one after another. 
-Two acquisition geometries are tested. In the first geometry, 150 receivers are evenly placed from (0.0, 0.7) km to (1.5, 0.7) km, which are at the bottom of the model, and form a top-bottom (TB) geometry. Signals recorded by this geometry are mostly transmitted waves;
-In the second gemetry, the 150 receivers are evenly placed from (0.0, 0.0) km to (1.5, 0.0), and is called the top-top (TT) gemetry, collecting mostly reflections. Data of the two geometries are generated and trained separatly.  
-Six sample models (a) and their corresponding TB (b) and TT (c) seismograms are plotted in Figure~\ref{fig:model_sample.eps}. The labels used for training, however, contain only 0s for the salt area, and 1s for other area (see the output in Figure~\ref{fig:sketch.eps}). 
-%Convolutional perfectly matched layer (CPML) absorbing boundary conditions \citep{komatitsch07} with a width of 20 grid points outside the models are applied on all four grid edges to reduce unwanted edge reflections.
-\fullplot{../EAGE_abstract/Fig/model_sample.eps}{width=1.0\textwidth}
+150 receivers are evenly placed from (0.0, 0.7) km to (1.5, 0.7) km, which are at the bottom of the model, and form a top-bottom geometry. Signals recorded by this geometry are mostly transmitted waves.
+
+Six sample models (a) and their corresponding seismograms (b) are plotted in Figure~\ref{fig:model_sample1.eps}. The true velocity models for generating the seismograms are used as groundtruth for the training. 
+%The labels used for training, however, contain only 0s for the salt area, and 1s for other area (see the output in Figure~\ref{fig:sketch.eps}). 
+\fullplot{model_sample1.eps}{width=1.0\textwidth}
 {(a) Six representative models for training, and their corresponding geometry seismograms (10 shots are generated for each model and only the fifth one is shown).}
 
-The network is trained on a workstation with one GFORCE GTX 1080Ti GPU and 64 GB RAM. The input seismic traces and their corresponding segmentation maps are used to train the network with the stochastic gradient descent implementation of Pytorch (\url{www.pytorch.org}). Figure~\ref{fig:cost_function.eps} shows the cross-entropy decreases during the learning process.
+The network is trained on a workstation with one GFORCE GTX 1080Ti GPU and 64 GB RAM. The input seismic traces and their corresponding segmentation maps are used to train the network with the stochastic gradient descent implementation of Pytorch (\url{www.pytorch.org}). Figure~\ref{fig:vnet_TB_cost.eps} shows the cross-entropy decreases during the learning process.
 
-\plot{cost_function.eps}{width=0.5\textwidth}
-{Cross-entropy decreases along with the training process.}
+\plot{vnet_TB_cost.eps}{width=0.5\textwidth}
+{The loss function decreases as the training proceeds.}
 
-The trained networks from TB and TT geometries are then tested with 20 samples that are not contained in their corresponding training sets. Six representative velocity models for testing are shown in Figure~\ref{fig:test_sample_tr_combo.eps}(a), and 10 shot gathers are generated for each model with the same acquisition geometries as in the training sets. The shot gathers are input to the trained network with the predictions for the TB and TT geometries are shown in Figure~\ref{fig:test_sample.eps}(b) and (c), respectively.
-\plot{test_sample_tr_combo.eps}{width=1.0\textwidth}
-{(a) Six representative velocity models for testing, and the corresponding predictions using the trained networks from TB (b) and TT(c) geometries.}
+We are interested in the evolution of the network during the learning process. We captured 10 network snapshots during the training, and apply those partially trained networks on one of the test samples. The predicted velocity models using those partially trained networks are shown in Figure~\ref{fig:network_evolution.eps}, and it shows how the network train itself to learn from the training. 
+\plot{network_evolution.eps}{width=0.5\textwidth}
+{The network evolution.}
 
-We use intersection over union (IOU) as a quantitative measurement for the performance of the proposed algorithm. The IOU value is a ratio of the number of pixels that are in the intersection of ground truth and prediction divided by the number of pixels in the union of the ground truth and prediction.
-We reach an averaged IOU of 90.53\% for all the samples in the test set.
+The trained networks is then tested with 20 samples that are not present in the training set. Six representative velocity models for testing are shown in Figure~\ref{fig:test_velocity_sample10.eps}(a), and 10 shot gathers are generated for each model with the same acquisition geometries as in the training set. The shot gathers are input to the trained network, and the output predictions are shown in Figure~\ref{fig:test_velocity_sample10.eps}(b).
+
+\fullplot{test_velocity_sample10.eps}{width=1.0\textwidth}
+{(a) Six representative velocity models for testing, and the corresponding predictions using the trained network.}
+
+To quantitatively analyze the accuracy of predictions, we choose three horizontal positions ??? and plot the predicted velocity values against the true velocity values in velocity vs. depth profiles (Figure~\ref{fig:velocity_comb.eps}). The predicted values matches matches well with the grouthtruth.
+
+\plot{velocity_comb.eps}{width=0.5\textwidth}
+{The predicted and groundtruth velocities plotted in velocity vs. depth profiles at three horizontal positions of the first test sample in Figure~\ref{fig:velocity_comb.eps}a}.
+
+
+%We use intersection over union (IOU) as a quantitative measurement for the performance of the proposed algorithm. The IOU value is a ratio of the number of pixels that are in the intersection of ground truth and prediction divided by the number of pixels in the union of the ground truth and prediction.
+%We reach an averaged IOU of 90.53\% for all the samples in the test set.
 \section{Discussion}
 The shot positions need to be fixed.
 The migration or inversion processed is performed in the down and up sampling processes. 
